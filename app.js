@@ -1,11 +1,12 @@
 const express = require('express');
-const assert = require('assert');
 const mongoose = require("mongoose");
 const UserDetails = require("./userDetails")
 const bcrypt = require("bcrypt")
+const jwt = require("jsonwebtoken")
 const cors = require("cors")
 const app = express();
 const port = 5000;
+const JWT_SECRECT = "ewf98we789ew7v897vdcsc()EF*E(^FE"
 
 app.use(express.json())
 app.use(cors())
@@ -20,6 +21,37 @@ mongoose.connection.on('disconnected', () => console.log('disconnected'));
 mongoose.connection.on('reconnected', () => console.log('reconnected'));
 mongoose.connection.on('disconnecting', () => console.log('disconnecting'));
 mongoose.connection.on('close', () => console.log('close'));
+
+app.post("/login", async(req, res)=>{
+    const {email, password} = req.body
+    
+    try {
+        const user = await UserDetails.findOne({email})
+        if(!user){
+            return res.status(400).send({
+                success: false,
+                message: 'user not found'
+            })
+        }
+        if(await bcrypt.compare(password, user.password)) {
+            const token = jwt.sign({email: user.email}, JWT_SECRECT)
+            return res.status(200).send({
+                success:true,
+                message: "login successfull",
+                token,
+                user
+            })
+        } else {
+            return res.status(400).send({
+                success: false,
+                message: "incorrect password"
+            })
+        }
+
+    } catch (error) {
+        return res.status(500).send(error)
+    }
+})
 
 app.post("/register", async(req, res)=>{
     const {fname, lname, email, password} = req.body
@@ -49,6 +81,46 @@ app.post("/register", async(req, res)=>{
             error: error,
             message: error.message
         })
+    }
+})
+
+app.post("/get-user", (req, res)=>{
+    const {token} = req.body
+    try {
+        if (!token) {
+            return res.status(401).send({
+                success: false,
+                message: 'JWT token is not provided',
+            });
+        }
+        const user = jwt.verify(token, JWT_SECRECT);
+        console.log(user)
+        const useremail = user.email;
+
+        UserDetails.findOne({ email: useremail })
+            .then((data) => {
+                if (!data) {
+                    return res.status(404).send({
+                        success: false,
+                        message: 'User not found',
+                    });
+                }
+
+                res.send({ success: true, user: data });
+            })
+            .catch((error) => {
+                console.error(error);
+                res.status(400).send({
+                    success: false,
+                    error: error.message,
+                });
+            });
+    } catch (error) {
+        console.error(error)
+        res.status(500).send({
+            success: false,
+            message: 'Invalid JWT token',
+        });
     }
 })
 

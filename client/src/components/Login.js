@@ -2,23 +2,47 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { setLoggedIn } from '../state/authSlice'; 
+import { setUser } from '../state/userSlice'; 
 import './login.css';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 const Login = () => {
   const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    console.log('Logging in with:', email, password);
-    dispatch(setLoggedIn());
-  };
+  const handleLogin = async(e)=>{
+    e.preventDefault()
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({email, password})
+      })
+      if(response.ok){
+        const data = await response.json()
+        alert(data.message)
+        window.localStorage.setItem("token", data.token)
+        dispatch(setLoggedIn())
+        dispatch(setUser(data.user))
+        window.location.href = "/dashboard"
+
+      } else {
+        const error = await response.json()
+        alert(error.message)
+        console.log(error)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   return (
     <div className='container'>
       <h2>Login</h2>
-      <form>
+      <form onSubmit={handleLogin}>
         <div className="mb-3">
           <label htmlFor="email" className="form-label">
             Email:
@@ -29,7 +53,6 @@ const Login = () => {
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder='Email'
           />
         </div>
         <div className="mb-3">
@@ -42,7 +65,6 @@ const Login = () => {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder='Password'
           />
         </div>
         <button className='button' type="button" onClick={handleLogin}>

@@ -2,16 +2,18 @@ import React from 'react';
 import { useNavigate  } from 'react-router-dom';
 import './dashboard.css';
 import profile from "../images/profile.jpg"
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setLoggedOut } from '../state/authSlice';  
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.user);
 
   const handleLogout = () => {
     dispatch(setLoggedOut());
-    navigate('/login');
+    window.localStorage.removeItem("token");
+    window.location.href = "/login"
   };
   return (
     <div>
@@ -30,19 +32,19 @@ const Dashboard = () => {
         <div className="profile-card p-3">
           <img src={profile} alt="Profile" className="profile-photo" />
           <div className="profile-details px-3 py-2">
-            <h2>Shaikh Waleed</h2>
+            <h2>{user?.fname + " " + user?.lname}</h2>
             <hr />
-            <p>Email: codesense@gmail.com</p>
+            <p>Email: {user?.email}</p>
             <p>Phone: +123456789</p>
             <p>Address: 123 Main St, City</p>
           </div>
         </div>
-        <div className="profile-card p-3 my-3">
+        <div className="profile-card p-3">
           <img src={profile} alt="Profile" className="profile-photo" />
           <div className="profile-details px-3 py-2">
-            <h2>Shaikh Waleed</h2>
+            <h2>{user?.fname + " " + user?.lname}</h2>
             <hr />
-            <p>Email: codesense@gmail.com</p>
+            <p>Email: {user?.email}</p>
             <p>Phone: +123456789</p>
             <p>Address: 123 Main St, City</p>
           </div>
